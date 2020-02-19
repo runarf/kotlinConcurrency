@@ -9,24 +9,35 @@ import io.ktor.client.request.get
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlin.system.measureTimeMillis
+
+val client: HttpClient = HttpClient() {
+    install(JsonFeature)
+}
 
 fun main(args: Array<String>): Unit = runBlocking<Unit> {
-    launch {
-        displayPokemons()
+    runBlocking {
+        val timeSequential = measureTimeMillis {
+            displayPokemonsSequential()
+        }
+        
+        val timeParallell = measureTimeMillis {
+            displayPokemonsParallell()
+        }
+
+        println("It took $timeParallell ms to get pokemons in parallell")
+        println("It took $timeSequential ms to get pokemons in sequence")
     }
+    client.close()
 }
 
 data class Pokemon(val name: String)
 
-suspend fun displayPokemons(): Unit = coroutineScope<Unit> {
+suspend fun displayPokemonsParallell(): Unit = coroutineScope<Unit> {
 
-    val client: HttpClient = HttpClient() {
-        install(JsonFeature)
-    }
-
-    val firstDeferredPokemon: Deferred<Pokemon> = async { client.get<Pokemon>("https://pokeapi.co/api/v2/pokemon/ditto/") }
+    val firstDeferredPokemon: Deferred<Pokemon> =
+        async { client.get<Pokemon>("https://pokeapi.co/api/v2/pokemon/ditto/") }
 
     val secondDeferredPokemon: Deferred<Pokemon> = async { client.get<Pokemon>("https://pokeapi.co/api/v2/pokemon/1/") }
 
@@ -36,7 +47,17 @@ suspend fun displayPokemons(): Unit = coroutineScope<Unit> {
     println(firstPokemon)
     println(secondPokemon)
 
-    client.close()
+}
+
+suspend fun displayPokemonsSequential(): Unit = coroutineScope<Unit> {
+
+    val firstPokemon: Pokemon = client.get<Pokemon>("https://pokeapi.co/api/v2/pokemon/ditto/")
+
+    val secondPokemon: Pokemon = client.get<Pokemon>("https://pokeapi.co/api/v2/pokemon/1/")
+
+    println(firstPokemon)
+    println(secondPokemon)
+
 }
 
 
