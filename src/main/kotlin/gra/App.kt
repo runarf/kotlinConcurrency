@@ -7,33 +7,34 @@ import io.ktor.client.HttpClient
 import io.ktor.client.features.json.JsonFeature
 import io.ktor.client.request.get
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
-fun main(args: Array<String>) = runBlocking<Unit> {
+fun main(args: Array<String>): Unit = runBlocking<Unit> {
     launch {
-        requests()
+        displayPokemons()
     }
 }
 
-data class Pokemon(val name: String, val height: Int)
+data class Pokemon(val name: String)
 
-suspend fun requests() = coroutineScope<Unit> {
+suspend fun displayPokemons(): Unit = coroutineScope<Unit> {
 
-    val client = HttpClient() {
+    val client: HttpClient = HttpClient() {
         install(JsonFeature)
     }
 
-    val first: Deferred<Pokemon> = async { client.get<Pokemon>("https://pokeapi.co/api/v2/pokemon/ditto/") }
+    val firstDeferredPokemon: Deferred<Pokemon> = async { client.get<Pokemon>("https://pokeapi.co/api/v2/pokemon/ditto/") }
 
-    val second: Deferred<Pokemon> = async { client.get<Pokemon>("https://pokeapi.co/api/v2/pokemon/1/") }
+    val secondDeferredPokemon: Deferred<Pokemon> = async { client.get<Pokemon>("https://pokeapi.co/api/v2/pokemon/1/") }
 
-    println(first.await())
-    println(second.await())
+    val firstPokemon: Pokemon = firstDeferredPokemon.await()
+    val secondPokemon: Pokemon = secondDeferredPokemon.await()
+
+    println(firstPokemon)
+    println(secondPokemon)
 
     client.close()
 }
